@@ -2,11 +2,10 @@
 PNG chunk types as defined by PNG Specification v1.2
 http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
 */
-
 use std::{fmt, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq)]
-struct ChunkType {
+pub struct ChunkType {
     /*A 4-byte chunk type code. For convenience in description and in examining PNG files,
     type codes are restricted to consist of uppercase and lowercase ASCII letters (A-Z and
     a-z, or 65-90 and 97-122 decimal). However, encoders and decoders must treat the codes
