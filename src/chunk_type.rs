@@ -3,14 +3,14 @@ PNG chunk types as defined by PNG Specification v1.2
 http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
 */
 
-use std::{str::FromStr, fmt};
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq)]
 struct ChunkType {
     /*A 4-byte chunk type code. For convenience in description and in examining PNG files,
     type codes are restricted to consist of uppercase and lowercase ASCII letters (A-Z and
     a-z, or 65-90 and 97-122 decimal). However, encoders and decoders must treat the codes
-    as fixed binary values, not character strings.*/    
+    as fixed binary values, not character strings.*/
     bytes: [u8; 4],
 }
 
@@ -18,37 +18,34 @@ impl TryFrom<[u8; 4]> for ChunkType {
     type Error = ();
 
     fn try_from(numbers: [u8; 4]) -> Result<Self, Self::Error> {
-        Ok(ChunkType { bytes: [
-            numbers[0],
-            numbers[1],
-            numbers[2],
-            numbers[3],
-            ] })
+        Ok(ChunkType {
+            bytes: [numbers[0], numbers[1], numbers[2], numbers[3]],
+        })
     }
-
 }
 
 impl FromStr for ChunkType {
-    type Err = &'static str;    // Define error type
-    
+    type Err = &'static str; // Define error type
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        
         if s.len() != 4 {
             return Err("Chunk type must be 4 characters");
-        } 
-        
+        }
+
         for c in s.chars() {
             if !c.is_ascii_alphabetic() {
                 return Err("Chunk type must be alphabetic");
             }
         }
 
-        return Ok(ChunkType { bytes: [
-            s.as_bytes()[0],
-            s.as_bytes()[1],
-            s.as_bytes()[2],
-            s.as_bytes()[3],
-            ] })
+        return Ok(ChunkType {
+            bytes: [
+                s.as_bytes()[0],
+                s.as_bytes()[1],
+                s.as_bytes()[2],
+                s.as_bytes()[3],
+            ],
+        });
     }
 }
 
@@ -59,9 +56,7 @@ impl std::fmt::Display for ChunkType {
     }
 }
 
-
 impl ChunkType {
-
     fn bytes(&self) -> [u8; 4] {
         self.bytes
     }
@@ -75,7 +70,7 @@ impl ChunkType {
 
         const CRITICAL_CHUNK_BIT: u8 = 5;
         let mask: u8 = 1 << CRITICAL_CHUNK_BIT;
-        
+
         // 0 if critical, 1 if ancillary
         if self.bytes[0] & mask == 0 {
             true
@@ -83,13 +78,13 @@ impl ChunkType {
             false
         }
     }
-    
+
     fn is_public(&self) -> bool {
         // Bit 5 (value 32) of second byte
 
         const PUBLIC_CHUNK_BIT: u8 = 5;
         let mask: u8 = 1 << PUBLIC_CHUNK_BIT;
-        
+
         // 0 if public, 1 if private
         if self.bytes[1] & mask == 0 {
             true
@@ -97,13 +92,13 @@ impl ChunkType {
             false
         }
     }
-    
+
     fn is_reserved_bit_valid(&self) -> bool {
         // Bit 5 (value 32) of third byte
 
         const RESERVED_CHUNK_BIT: u8 = 5;
         let mask: u8 = 1 << RESERVED_CHUNK_BIT;
-        
+
         // Reserved bit is valid if bit 5 of is 0 (capital letter)
         if self.bytes[2] & mask == 0 {
             true
@@ -111,13 +106,13 @@ impl ChunkType {
             false
         }
     }
-    
+
     fn is_safe_to_copy(&self) -> bool {
         // Bit 5 of fourth byte
 
         const SAFE_CHUNK_BIT: u8 = 5;
         let mask: u8 = 1 << SAFE_CHUNK_BIT;
-        
+
         // 0 if unsafe to copy, 1 if safe to copy
         if self.bytes[3] & mask == 0 {
             false
@@ -125,9 +120,7 @@ impl ChunkType {
             true
         }
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
