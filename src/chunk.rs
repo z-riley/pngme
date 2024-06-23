@@ -19,23 +19,33 @@ impl TryFrom<&[u8]> for Chunk {
         let mut iter = value.iter();
 
         // First 4 bytes into length
-        let length_field = iter.take(4).cloned().collect::<Vec<u8>>();
-        let length_field = u32::from_be_bytes(length_field.try_into().expect("Invalid length"));
-        dbg!(length_field);
+        let length_field = iter.by_ref().take(4).cloned().collect::<Vec<u8>>();
+        let length = u32::from_be_bytes(length_field.try_into().expect("Invalid length"));
+
         // Next 4 bytes into chunk_type
-        let chunk_type = ChunkType::try_from(
-            iter.by_ref()
-                .take(4)
-                .cloned()
-                .collect::<Vec<u8>>()
-                .expect("a"),
-        );
+        let chunk_type_field: [u8; 4] = iter
+            .by_ref()
+            .take(4)
+            .cloned()
+            .collect::<Vec<u8>>()
+            .try_into()
+            .expect("Invalid chunk type");
+        let chunk_type = ChunkType::try_from(chunk_type_field).expect("Invalid chunk type");
+
         // All other bytes besides the last 4 into chunk_data
+        let chunk_data: Vec<u8> = iter.by_ref().take(value.len() - 12).cloned().collect();
 
         // Final 4 bytes into crc
-        todo!()
+        let crc_field = iter.take(4).cloned().collect::<Vec<u8>>();
+        let crc = u32::from_be_bytes(crc_field.try_into().expect("Invalid CRC"));
 
         // Return struct
+        Ok(Chunk {
+            length: length,
+            chunk_type: chunk_type,
+            chunk_data: chunk_data,
+            crc: crc,
+        })
     }
 }
 
