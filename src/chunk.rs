@@ -2,17 +2,19 @@
 PNG Chunks
 */
 use crate::chunk_type::ChunkType;
-use std::fmt::{self, Error};
+use crc::{Crc, CRC_32_ISO_HDLC};
+use std::fmt::{self};
+use std::string;
 
 struct Chunk {
-    length: u32,
+    length: u32, // number of bytes in teh data field
     chunk_type: ChunkType,
     chunk_data: Vec<u8>,
-    crc: u32,
+    crc: u32, // calculated on the preceding bytes in the chunk, including the chunk type code and chunk data fields, but not including the length field
 }
 
 impl TryFrom<&[u8]> for Chunk {
-    type Error = ();
+    type Error = &'static str;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         assert!(value.len() >= 12, "Must be 12 bytes or greater");
@@ -35,48 +37,75 @@ impl TryFrom<&[u8]> for Chunk {
         // All other bytes besides the last 4 into chunk_data
         let chunk_data: Vec<u8> = iter.by_ref().take(value.len() - 12).cloned().collect();
 
-        // Final 4 bytes into crc
-        let crc_field = iter.take(4).cloned().collect::<Vec<u8>>();
-        let crc = u32::from_be_bytes(crc_field.try_into().expect("Invalid CRC"));
-
-        // Return struct
-        Ok(Chunk {
+        let mut chunk = Chunk {
             length: length,
             chunk_type: chunk_type,
             chunk_data: chunk_data,
-            crc: crc,
-        })
+            crc: 0,
+        };
+
+        // Lastly, populate the crc field using the last 4 bytes
+        let crc_field = iter.take(4).cloned().collect::<Vec<u8>>();
+        let supplied_crc = u32::from_be_bytes(crc_field.try_into().expect("Invalid CRC"));
+        let real_crc = chunk.crc();
+        if supplied_crc != real_crc {
+            return Err("Supplied CRC is incorrect");
+        }
+        chunk.crc = supplied_crc;
+
+        Ok(chunk)
     }
 }
 
 impl std::fmt::Display for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // write!(f, "({}, {})", self.longitude, self.latitude)
-        todo!()
+        write!(
+            f,
+            "({}, {}, {}, {})",
+            self.length,
+            self.chunk_type,
+            self.data_as_string()
+                .expect("Couldn't convert data to string"),
+            self.crc
+        )
     }
 }
 
 impl Chunk {
     fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
-        todo!()
+        Chunk {
+            length: data.len() as u32,
+            chunk_type: chunk_type,
+            chunk_data: data.clone(),
+            crc: 0,
+        }
     }
     fn length(&self) -> u32 {
-        self.chunk_data.len() as u32 // may overflow as usize is 64 bit
+        self.length
     }
     fn chunk_type(&self) -> &ChunkType {
-        todo!()
+        &self.chunk_type
     }
     fn data(&self) -> &[u8] {
-        todo!()
+        &self.chunk_data
     }
     fn crc(&self) -> u32 {
-        todo!()
+        let mut type_and_data_bytes =
+            Vec::with_capacity(&self.chunk_type.bytes().len() + self.chunk_data.len());
+        type_and_data_bytes.extend_from_slice(&self.chunk_type.bytes());
+        type_and_data_bytes.extend(self.chunk_data.iter());
+        Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes)
     }
-    fn data_as_string(&self) -> Result<String, Error> {
-        todo!()
+    fn data_as_string(&self) -> Result<String, string::FromUtf8Error> {
+        String::from_utf8(self.chunk_data.clone())
     }
     fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        let mut bytes = Vec::with_capacity(4 + 4 + self.chunk_data.len() + 4);
+        bytes.extend_from_slice(&self.length.to_be_bytes());
+        bytes.extend_from_slice(&self.chunk_type.bytes());
+        bytes.extend_from_slice(&self.chunk_data);
+        bytes.extend_from_slice(&self.crc.to_be_bytes());
+        bytes
     }
 }
 

@@ -56,15 +56,15 @@ impl std::fmt::Display for ChunkType {
 }
 
 impl ChunkType {
-    fn bytes(&self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         self.bytes
     }
 
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.is_reserved_bit_valid()
     }
 
-    fn is_critical(&self) -> bool {
+    pub fn is_critical(&self) -> bool {
         // Bit 5 (value 32) of first byte
 
         const CRITICAL_CHUNK_BIT: u8 = 5;
@@ -78,9 +78,8 @@ impl ChunkType {
         }
     }
 
-    fn is_public(&self) -> bool {
+    pub fn is_public(&self) -> bool {
         // Bit 5 (value 32) of second byte
-
         const PUBLIC_CHUNK_BIT: u8 = 5;
         let mask: u8 = 1 << PUBLIC_CHUNK_BIT;
 
@@ -92,7 +91,7 @@ impl ChunkType {
         }
     }
 
-    fn is_reserved_bit_valid(&self) -> bool {
+    pub fn is_reserved_bit_valid(&self) -> bool {
         // Bit 5 (value 32) of third byte
 
         const RESERVED_CHUNK_BIT: u8 = 5;
@@ -106,7 +105,7 @@ impl ChunkType {
         }
     }
 
-    fn is_safe_to_copy(&self) -> bool {
+    pub fn is_safe_to_copy(&self) -> bool {
         // Bit 5 of fourth byte
 
         const SAFE_CHUNK_BIT: u8 = 5;
