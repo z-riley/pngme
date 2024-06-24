@@ -1,4 +1,4 @@
-/*chunk_type.rs
+/*
 PNG chunk types as defined by PNG Specification v1.2
 http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
 */

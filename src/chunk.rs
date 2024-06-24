@@ -1,6 +1,3 @@
-/*chunk.rs
-PNG Chunks
-*/
 use crate::chunk_type::ChunkType;
 use crc::{Crc, CRC_32_ISO_HDLC};
 use std::fmt::{self};

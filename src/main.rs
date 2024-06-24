@@ -1,4 +1,4 @@
-/*main.rs
+/*
 PNG encoding project from https://jrdngr.github.io/pngme_book/
 */
 
