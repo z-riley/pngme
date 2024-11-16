@@ -1,9 +1,71 @@
-struct Png {}
+use std::fmt;
+use std::str::FromStr;
+
+use crate::chunk_type::ChunkType;
+use crate::{chunk::Chunk, Error};
+
+/* PNG NOTES:
+First 8 bytes = STANDARD_HEADER
+IHDR chunk
+...other chunks...
+IEND chunk
+*/
+#[derive(Debug)]
+struct Png {
+    chunks: Vec<Chunk>,
+}
+
+impl TryFrom<&[u8]> for Png {
+    type Error = ();
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+impl fmt::Display for Png {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{:?}", self.chunks)
+    }
+}
 
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
-}
 
+    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+        Png { chunks }
+    }
+    fn append_chunk(&mut self, chunk: Chunk) {
+        todo!()
+    }
+
+    // TODO: make the error type correct
+    fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, Error> {
+        todo!()
+    }
+
+    fn header(&self) -> &[u8; 8] {
+        todo!()
+    }
+
+    fn chunks(&self) -> &[Chunk] {
+        &self.chunks
+    }
+
+    // Returns the first occurance of a given chunk type
+    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+        let looking_for = match ChunkType::from_str(chunk_type) {
+            Ok(t) => t,
+            Err(_) => return None,
+        };
+
+        self.chunks.iter().find(|x| x.chunk_type() == &looking_for)
+    }
+
+    fn as_bytes(&self) -> Vec<u8> {
+        todo!()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -25,7 +87,7 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
+    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, Error> {
         use std::str::FromStr;
 
         let chunk_type = ChunkType::from_str(chunk_type)?;

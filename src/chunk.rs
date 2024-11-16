@@ -3,8 +3,9 @@ use crc::{Crc, CRC_32_ISO_HDLC};
 use std::fmt::{self};
 use std::string;
 
-struct Chunk {
-    length: u32, // number of bytes in teh data field
+#[derive(Debug)]
+pub struct Chunk {
+    length: u32, // number of bytes in the data field
     chunk_type: ChunkType,
     chunk_data: Vec<u8>,
     crc: u32, // calculated on the preceding bytes in the chunk, including the chunk type code and chunk data fields, but not including the length field
@@ -69,7 +70,7 @@ impl std::fmt::Display for Chunk {
 }
 
 impl Chunk {
-    fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         Chunk {
             length: data.len() as u32,
             chunk_type: chunk_type,
@@ -77,26 +78,26 @@ impl Chunk {
             crc: 0,
         }
     }
-    fn length(&self) -> u32 {
+    pub fn length(&self) -> u32 {
         self.length
     }
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
-    fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &[u8] {
         &self.chunk_data
     }
-    fn crc(&self) -> u32 {
+    pub fn crc(&self) -> u32 {
         let mut type_and_data_bytes =
             Vec::with_capacity(&self.chunk_type.bytes().len() + self.chunk_data.len());
         type_and_data_bytes.extend_from_slice(&self.chunk_type.bytes());
         type_and_data_bytes.extend(self.chunk_data.iter());
         Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes)
     }
-    fn data_as_string(&self) -> Result<String, string::FromUtf8Error> {
+    pub fn data_as_string(&self) -> Result<String, string::FromUtf8Error> {
         String::from_utf8(self.chunk_data.clone())
     }
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(4 + 4 + self.chunk_data.len() + 4);
         bytes.extend_from_slice(&self.length.to_be_bytes());
         bytes.extend_from_slice(&self.chunk_type.bytes());
