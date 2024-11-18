@@ -15,7 +15,10 @@ impl TryFrom<&[u8]> for Chunk {
     type Error = &'static str;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        assert!(value.len() >= 12, "Must be 12 bytes or greater");
+        if value.len() < 12 {
+            return Err("Must be 12 bytes or greater");
+        }
+
         let mut iter = value.iter();
 
         // First 4 bytes into length
@@ -35,23 +38,26 @@ impl TryFrom<&[u8]> for Chunk {
         // All other bytes besides the last 4 into chunk_data
         let chunk_data: Vec<u8> = iter.by_ref().take(value.len() - 12).cloned().collect();
 
-        let mut chunk = Chunk {
-            length: length,
-            chunk_type: chunk_type,
-            chunk_data: chunk_data,
-            crc: 0,
-        };
+        // Calculate the CRC from the chunk type and data bytes
+        let crc_bytes = iter.take(4).cloned().collect::<Vec<u8>>();
+        let supplied_crc = u32::from_be_bytes(crc_bytes.try_into().expect("Invalid CRC"));
 
-        // Lastly, populate the crc field using the last 4 bytes
-        let crc_field = iter.take(4).cloned().collect::<Vec<u8>>();
-        let supplied_crc = u32::from_be_bytes(crc_field.try_into().expect("Invalid CRC"));
-        let real_crc = chunk.crc();
+        // Check the supplied CRC value is correct
+        let mut type_and_data_bytes =
+            Vec::with_capacity(&chunk_type.bytes().len() + &chunk_data.len());
+        type_and_data_bytes.extend_from_slice(&chunk_type.bytes());
+        type_and_data_bytes.extend(&chunk_data);
+        let real_crc = Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes);
         if supplied_crc != real_crc {
             return Err("Supplied CRC is incorrect");
         }
-        chunk.crc = supplied_crc;
 
-        Ok(chunk)
+        Ok(Chunk {
+            length: length,
+            chunk_type: chunk_type,
+            chunk_data: chunk_data,
+            crc: supplied_crc,
+        })
     }
 }
 
@@ -71,32 +77,38 @@ impl std::fmt::Display for Chunk {
 
 impl Chunk {
     pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+        let mut type_and_data_bytes = Vec::with_capacity(chunk_type.bytes().len() + data.len());
+        type_and_data_bytes.extend_from_slice(&chunk_type.bytes());
+        type_and_data_bytes.extend(&data);
+
         Chunk {
             length: data.len() as u32,
             chunk_type: chunk_type,
             chunk_data: data.clone(),
-            crc: 0,
+            crc: Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes),
         }
     }
+
     pub fn length(&self) -> u32 {
         self.length
     }
+
     pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
+
     pub fn data(&self) -> &[u8] {
         &self.chunk_data
     }
+
     pub fn crc(&self) -> u32 {
-        let mut type_and_data_bytes =
-            Vec::with_capacity(&self.chunk_type.bytes().len() + self.chunk_data.len());
-        type_and_data_bytes.extend_from_slice(&self.chunk_type.bytes());
-        type_and_data_bytes.extend(self.chunk_data.iter());
-        Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes)
+        self.crc
     }
+
     pub fn data_as_string(&self) -> Result<String, string::FromUtf8Error> {
         String::from_utf8(self.chunk_data.clone())
     }
+
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(4 + 4 + self.chunk_data.len() + 4);
         bytes.extend_from_slice(&self.length.to_be_bytes());
