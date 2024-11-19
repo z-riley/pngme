@@ -3,23 +3,25 @@ PNG chunk types as defined by PNG Specification v1.2
 http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
 */
 use std::{fmt, str::FromStr};
+use thiserror::Error;
 
+#[derive(Error, Debug)]
+pub enum ChunkTypeError {}
+
+// PNG chunk types as defined by PNG Specification v1.2:
+// http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType {
-    /*A 4-byte chunk type code. For convenience in description and in examining PNG files,
-    type codes are restricted to consist of uppercase and lowercase ASCII letters (A-Z and
-    a-z, or 65-90 and 97-122 decimal). However, encoders and decoders must treat the codes
-    as fixed binary values, not character strings.*/
+    // A 4-byte chunk type code. For convenience in description and in examining PNG files, type
+    // codes are restricted to consist of uppercase and lowercase ASCII letters.
     bytes: [u8; 4],
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = ();
+    type Error = ChunkTypeError;
 
-    fn try_from(numbers: [u8; 4]) -> Result<Self, Self::Error> {
-        Ok(ChunkType {
-            bytes: [numbers[0], numbers[1], numbers[2], numbers[3]],
-        })
+    fn try_from(bytes: [u8; 4]) -> Result<Self, ChunkTypeError> {
+        Ok(ChunkType { bytes })
     }
 }
 
