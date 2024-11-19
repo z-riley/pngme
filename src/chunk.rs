@@ -2,6 +2,16 @@ use crate::chunk_type::ChunkType;
 use crc::{Crc, CRC_32_ISO_HDLC};
 use std::fmt::{self};
 use std::string;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ChunkError {
+    #[error("cannot parse less than {0} bytes")]
+    InvalidLength(u64),
+
+    #[error("supplied CRC value is incorrect: {got} (expected {expected})")]
+    InvalidCrc { got: u32, expected: u32 },
+}
 
 #[derive(Debug)]
 pub struct Chunk {
@@ -12,11 +22,11 @@ pub struct Chunk {
 }
 
 impl TryFrom<&[u8]> for Chunk {
-    type Error = &'static str;
+    type Error = ChunkError;
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self, ChunkError> {
         if value.len() < 12 {
-            return Err("Must be 12 bytes or greater");
+            return Err(ChunkError::InvalidLength(12));
         }
 
         let mut iter = value.iter();
@@ -49,7 +59,10 @@ impl TryFrom<&[u8]> for Chunk {
         type_and_data_bytes.extend(&chunk_data);
         let real_crc = Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes);
         if supplied_crc != real_crc {
-            return Err("Supplied CRC is incorrect");
+            return Err(ChunkError::InvalidCrc {
+                got: supplied_crc,
+                expected: real_crc,
+            });
         }
 
         Ok(Chunk {
