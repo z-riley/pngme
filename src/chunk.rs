@@ -15,10 +15,21 @@ pub enum ChunkError {
 
 #[derive(Debug)]
 pub struct Chunk {
-    length: u32, // number of bytes in the data field
+    // A 4-byte unsigned integer giving the number of bytes in the chunk's data field. The length
+    // counts only the data field, not itself, the chunk type code, or the CRC. Zero is a valid length
+    length: u32,
+
+    // A 4-byte chunk type code. For convenience in description and in examining PNG files, type
+    // codes are restricted to consist of uppercase and lowercase ASCII letters. However, encoders
+    // and decoders must treat the codes as fixed binary values, not character strings
     chunk_type: ChunkType,
+
+    // The data bytes appropriate to the chunk type, if any. This field can be of zero length
     chunk_data: Vec<u8>,
-    crc: u32, // calculated on the preceding bytes in the chunk, including the chunk type code and chunk data fields, but not including the length field
+
+    // A 4-byte CRC (Cyclic Redundancy Check) calculated on the preceding bytes in the chunk,
+    // including the chunk type code and chunk data fields, but not including the length field. The CRC is always present, even for chunks containing no data
+    crc: u32,
 }
 
 impl TryFrom<&[u8]> for Chunk {
