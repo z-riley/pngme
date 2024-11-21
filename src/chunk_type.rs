@@ -6,7 +6,12 @@ use std::{fmt, str::FromStr};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum ChunkTypeError {}
+pub enum ChunkTypeError {
+    #[error("chunk type must be 4 characters")]
+    IncorrectLength,
+    #[error("chunk type must be alphabetic")]
+    NotAlpabetical,
+}
 
 // PNG chunk types as defined by PNG Specification v1.2:
 // http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
@@ -26,16 +31,16 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl FromStr for ChunkType {
-    type Err = &'static str; // Define error type
+    type Err = ChunkTypeError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() != 4 {
-            return Err("Chunk type must be 4 characters");
+            return Err(ChunkTypeError::IncorrectLength);
         }
 
         for c in s.chars() {
             if !c.is_ascii_alphabetic() {
-                return Err("Chunk type must be alphabetic");
+                return Err(ChunkTypeError::NotAlpabetical);
             }
         }
 
