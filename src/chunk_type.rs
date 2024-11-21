@@ -9,6 +9,7 @@ use thiserror::Error;
 pub enum ChunkTypeError {
     #[error("chunk type must be 4 characters")]
     IncorrectLength,
+
     #[error("chunk type must be alphabetic")]
     NotAlpabetical,
 }

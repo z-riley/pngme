@@ -1,25 +1,88 @@
-use std::fmt;
-use std::str::FromStr;
-
+use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
-use crate::{chunk::Chunk, Error};
+use std::str::FromStr;
+use std::{fmt, mem, str, vec};
+use thiserror::Error;
 
-/* PNG NOTES:
-First 8 bytes = STANDARD_HEADER
-IHDR chunk
-...other chunks...
-IEND chunk
-*/
+#[derive(Error, Debug)]
+pub enum PngError {
+    #[error("cannot parse bytes: {reason}")]
+    InvalidBytes { reason: String },
+
+    #[error("invalid header")]
+    InvalidHeader(),
+
+    #[error("chunk does not exist")]
+    ChunkMissing(),
+}
+
 #[derive(Debug)]
-struct Png {
+pub struct Png {
+    header: [u8; 8],
     chunks: Vec<Chunk>,
 }
 
 impl TryFrom<&[u8]> for Png {
-    type Error = ();
+    type Error = PngError;
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        todo!()
+    // Construct a Png from a byte slice (including the standard png header)
+    fn try_from(value: &[u8]) -> Result<Png, PngError> {
+        // NOTE: value = [header bytes] + [other bytes]
+
+        if value.len() < Png::STANDARD_HEADER.len() {
+            return Err(PngError::InvalidBytes {
+                reason: String::from(format!(
+                    "not enough bytes (need {} or more)",
+                    Png::STANDARD_HEADER.len()
+                )),
+            });
+        }
+
+        // Check header is correct
+        if &value[..Png::STANDARD_HEADER.len()] != Png::STANDARD_HEADER {
+            return Err(PngError::InvalidHeader());
+        }
+
+        let mut chunks = vec![];
+        let mut cursor = Png::STANDARD_HEADER.len();
+        loop {
+            // Read the chunk data length from the first 4 bytes
+            let length_bytes_range = cursor..cursor + mem::size_of::<u32>();
+            let mut length_bytes = [0u8; mem::size_of::<u32>()];
+            length_bytes.copy_from_slice(&value[length_bytes_range]);
+            let length = u32::from_be_bytes(length_bytes) as usize;
+
+            // Read the whole range of bytes for the chunk
+
+            let chunk_length = mem::size_of::<u32>()
+                + mem::size_of::<ChunkType>()
+                + length
+                + mem::size_of::<u32>();
+            let chunk_bytes_range = cursor..cursor + chunk_length;
+            let chunk_bytes = &value[chunk_bytes_range.clone()];
+
+            chunks.push(match Chunk::try_from(chunk_bytes) {
+                Ok(v) => v,
+                Err(e) => {
+                    return Err(PngError::InvalidBytes {
+                        reason: e.to_string(),
+                    })
+                }
+            });
+
+            // Move the cursor to the next chunk
+            cursor += chunk_length;
+            if cursor >= value.len() {
+                break;
+            }
+
+            println!("got to {} out of {}", &chunk_bytes_range.end, value.len());
+        }
+
+        Ok(Png {
+            header: Png::STANDARD_HEADER,
+            chunks: chunks,
+        })
     }
 }
 
@@ -33,19 +96,37 @@ impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
     fn from_chunks(chunks: Vec<Chunk>) -> Png {
-        Png { chunks }
-    }
-    fn append_chunk(&mut self, chunk: Chunk) {
-        todo!()
+        Png {
+            header: Png::STANDARD_HEADER,
+            chunks: chunks,
+        }
     }
 
-    // TODO: make the error type correct
-    fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, Error> {
-        todo!()
+    fn append_chunk(&mut self, chunk: Chunk) {
+        self.chunks.push(chunk);
+    }
+
+    // Removes the first occurance of a given chunk type
+    fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
+        let looking_for = match ChunkType::from_str(chunk_type) {
+            Ok(t) => t,
+            Err(e) => return Err(PngError::ChunkMissing()),
+        };
+
+        let index = match self
+            .chunks
+            .iter()
+            .position(|x| x.chunk_type() == &looking_for)
+        {
+            Some(v) => v,
+            None => return Err(PngError::ChunkMissing()),
+        };
+
+        Ok(self.chunks.remove(index))
     }
 
     fn header(&self) -> &[u8; 8] {
-        todo!()
+        &self.header
     }
 
     fn chunks(&self) -> &[Chunk] {
@@ -63,7 +144,14 @@ impl Png {
     }
 
     fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        let mut bytes = self.header.to_vec();
+        bytes.extend(
+            self.chunks
+                .iter()
+                .flat_map(|chunk| chunk.as_bytes())
+                .collect::<Vec<u8>>(),
+        );
+        bytes
     }
 }
 #[cfg(test)]
@@ -71,8 +159,8 @@ mod tests {
     use super::*;
     use crate::chunk::Chunk;
     use crate::chunk_type::ChunkType;
+    use crate::Error;
     use std::convert::TryFrom;
-    use std::str::FromStr;
 
     fn testing_chunks() -> Vec<Chunk> {
         vec![
@@ -116,7 +204,7 @@ mod tests {
             .chain(chunk_bytes.iter())
             .copied()
             .collect();
-
+        println!("debug: {:?}", bytes);
         let png = Png::try_from(bytes.as_ref());
 
         assert!(png.is_ok());
