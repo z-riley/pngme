@@ -1,7 +1,3 @@
-/*
-PNG chunk types as defined by PNG Specification v1.2
-http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
-*/
 use std::{fmt, str::FromStr};
 use thiserror::Error;
 
