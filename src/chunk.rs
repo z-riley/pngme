@@ -89,12 +89,8 @@ impl std::fmt::Display for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "({}, {}, {}, {})",
-            self.length,
-            self.chunk_type,
-            self.data_as_string()
-                .expect("Couldn't convert data to string"),
-            self.crc
+            "({}, {}, {:?}, {})",
+            self.length, self.chunk_type, self.chunk_data, self.crc
         )
     }
 }

@@ -9,11 +9,11 @@ pub enum PngError {
     #[error("cannot parse bytes: {reason}")]
     InvalidBytes { reason: String },
 
-    #[error("invalid header")]
+    #[error("invalid header for PNG file")]
     InvalidHeader(),
 
     #[error("chunk does not exist")]
-    ChunkMissing(),
+    ChunkNotFound(),
 }
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ impl TryFrom<&[u8]> for Png {
 
         // Check header is correct
         if &value[..Png::STANDARD_HEADER.len()] != Png::STANDARD_HEADER {
-            return Err(PngError::InvalidHeader());
+            return Err(PngError::InvalidHeader {});
         }
 
         let mut chunks = vec![];
@@ -59,7 +59,7 @@ impl TryFrom<&[u8]> for Png {
                 + length
                 + mem::size_of::<u32>();
             let chunk_bytes_range = cursor..cursor + chunk_length;
-            let chunk_bytes = &value[chunk_bytes_range.clone()];
+            let chunk_bytes = &value[chunk_bytes_range];
 
             chunks.push(match Chunk::try_from(chunk_bytes) {
                 Ok(v) => v,
@@ -75,8 +75,6 @@ impl TryFrom<&[u8]> for Png {
             if cursor >= value.len() {
                 break;
             }
-
-            println!("got to {} out of {}", &chunk_bytes_range.end, value.len());
         }
 
         Ok(Png {
@@ -88,29 +86,29 @@ impl TryFrom<&[u8]> for Png {
 
 impl fmt::Display for Png {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{:?}", self.chunks)
+        self.chunks.iter().try_for_each(|x| write!(f, "{} ", x))
     }
 }
 
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png {
             header: Png::STANDARD_HEADER,
             chunks: chunks,
         }
     }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
 
     // Removes the first occurance of a given chunk type
-    fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
+    pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
         let looking_for = match ChunkType::from_str(chunk_type) {
             Ok(t) => t,
-            Err(e) => return Err(PngError::ChunkMissing()),
+            Err(_) => return Err(PngError::ChunkNotFound()),
         };
 
         let index = match self
@@ -119,7 +117,7 @@ impl Png {
             .position(|x| x.chunk_type() == &looking_for)
         {
             Some(v) => v,
-            None => return Err(PngError::ChunkMissing()),
+            None => return Err(PngError::ChunkNotFound()),
         };
 
         Ok(self.chunks.remove(index))
@@ -143,7 +141,7 @@ impl Png {
         self.chunks.iter().find(|x| x.chunk_type() == &looking_for)
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = self.header.to_vec();
         bytes.extend(
             self.chunks
