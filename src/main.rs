@@ -14,8 +14,6 @@ pub type Error = Box<dyn std::error::Error>;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = args::Cli::parse();
 
-    println!("got cmd {:?}", cli.command);
-
     match &cli.command {
         args::Commands::Encode {
             file,

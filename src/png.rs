@@ -25,10 +25,8 @@ pub struct Png {
 impl TryFrom<&[u8]> for Png {
     type Error = PngError;
 
-    // Construct a Png from a byte slice (including the standard png header)
+    /// Construct a Png from a byte slice (including the standard png header)
     fn try_from(value: &[u8]) -> Result<Png, PngError> {
-        // NOTE: value = [header bytes] + [other bytes]
-
         if value.len() < Png::STANDARD_HEADER.len() {
             return Err(PngError::InvalidBytes {
                 reason: String::from(format!(
@@ -104,7 +102,7 @@ impl Png {
         self.chunks.push(chunk);
     }
 
-    // Removes the first occurance of a given chunk type
+    /// Removes the first occurance of a given chunk type
     pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
         let looking_for = match ChunkType::from_str(chunk_type) {
             Ok(t) => t,

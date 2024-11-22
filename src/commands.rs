@@ -21,7 +21,7 @@ pub fn encode(
 
     match output_file {
         Some(path) => fs::write(path, png.as_bytes())?,
-        None => println!("{}", png),
+        None => fs::write(file, png.as_bytes())?,
     }
 
     Ok(())

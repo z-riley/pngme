@@ -12,11 +12,11 @@ pub enum Commands {
     Encode {
         /// path to the PNG file
         file: String,
-        /// type of chunk to hide the message in. Must be 4 alphabetic characters
+        /// type of chunk to hide the message in
         chunk_type: String,
         /// message to hide in the PNG file
         message: String,
-        /// path to save the processed PNG to (optional)
+        /// save a modified a copy
         output_file: Option<String>,
     },
 
@@ -24,6 +24,7 @@ pub enum Commands {
     Decode {
         /// path to the PNG file
         file: String,
+        /// type of chunk to look for a message in. Must be 4 alphabetic characters
         chunk_type: String,
     },
 
@@ -31,6 +32,7 @@ pub enum Commands {
     Remove {
         /// path to the PNG file
         file: String,
+        /// type of chunk to remove. Must be 4 alphabetic characters
         chunk_type: String,
     },
 
