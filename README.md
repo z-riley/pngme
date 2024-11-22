@@ -1,11 +1,14 @@
-# PngMe Guided Project
+# PNGme - Guided Project
 
 ## Description 
 
-todo
+A command line program that lets you hide secret messages in PNG files. There are four commands:
 
-## Notes
-- PNG is a list of "chunks" where the type represented as a 4-character/byte string
-- There are standard chunk type for image data but you can also add your own arbitrary chunks
-- The [PNG Specification](http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html) lists the valid chunk types
+- `encode` a message into a PNG file
+- `decode` a message stored in a PNG file
+- `remove` a message from a PNG file
+- `print` a list of PNG chunks that can be searched for messages
 
+## Resources
+
+Made by following [jrdngr.github.io/pngme_book](https://jrdngr.github.io/pngme_book/)
