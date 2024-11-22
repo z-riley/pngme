@@ -63,6 +63,7 @@ impl std::fmt::Display for ChunkType {
     }
 }
 
+#[allow(dead_code)]
 impl ChunkType {
     pub fn bytes(&self) -> [u8; 4] {
         self.bytes

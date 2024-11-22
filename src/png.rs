@@ -88,6 +88,7 @@ impl fmt::Display for Png {
     }
 }
 
+#[allow(dead_code)]
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
@@ -121,16 +122,16 @@ impl Png {
         Ok(self.chunks.remove(index))
     }
 
-    fn header(&self) -> &[u8; 8] {
+    pub fn header(&self) -> &[u8; 8] {
         &self.header
     }
 
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         &self.chunks
     }
 
     // Returns the first occurance of a given chunk type
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         let looking_for = match ChunkType::from_str(chunk_type) {
             Ok(t) => t,
             Err(_) => return None,

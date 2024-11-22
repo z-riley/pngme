@@ -95,6 +95,7 @@ impl std::fmt::Display for Chunk {
     }
 }
 
+#[allow(dead_code)]
 impl Chunk {
     pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let mut type_and_data_bytes = Vec::with_capacity(chunk_type.bytes().len() + data.len());
