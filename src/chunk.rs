@@ -65,7 +65,7 @@ impl TryFrom<&[u8]> for Chunk {
 
         // Check the supplied CRC value is correct
         let mut type_and_data_bytes =
-            Vec::with_capacity(&chunk_type.bytes().len() + &chunk_data.len());
+            Vec::with_capacity(chunk_type.bytes().len() + chunk_data.len());
         type_and_data_bytes.extend_from_slice(&chunk_type.bytes());
         type_and_data_bytes.extend(&chunk_data);
         let real_crc = Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes);
@@ -77,9 +77,9 @@ impl TryFrom<&[u8]> for Chunk {
         }
 
         Ok(Chunk {
-            length: length,
-            chunk_type: chunk_type,
-            chunk_data: chunk_data,
+            length,
+            chunk_type,
+            chunk_data,
             crc: supplied_crc,
         })
     }
@@ -104,7 +104,7 @@ impl Chunk {
 
         Chunk {
             length: data.len() as u32,
-            chunk_type: chunk_type,
+            chunk_type,
             chunk_data: data.clone(),
             crc: Crc::<u32>::new(&CRC_32_ISO_HDLC).checksum(&type_and_data_bytes),
         }

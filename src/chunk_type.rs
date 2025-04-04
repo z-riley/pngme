@@ -41,21 +41,21 @@ impl FromStr for ChunkType {
             }
         }
 
-        return Ok(ChunkType {
+        Ok(ChunkType {
             bytes: [
                 s.as_bytes()[0],
                 s.as_bytes()[1],
                 s.as_bytes()[2],
                 s.as_bytes()[3],
             ],
-        });
+        })
     }
 }
 
 // The ToString trait is automatically implemented when Display is implemented
 impl std::fmt::Display for ChunkType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(&self.bytes.to_vec()))
+        write!(f, "{}", String::from_utf8_lossy(self.bytes.as_ref()))
     }
 }
 
@@ -76,11 +76,7 @@ impl ChunkType {
         let mask: u8 = 1 << CRITICAL_CHUNK_BIT;
 
         // 0 if critical, 1 if ancillary
-        if self.bytes[0] & mask == 0 {
-            true
-        } else {
-            false
-        }
+        self.bytes[0] & mask == 0
     }
 
     pub fn is_public(&self) -> bool {
@@ -89,11 +85,7 @@ impl ChunkType {
         let mask: u8 = 1 << PUBLIC_CHUNK_BIT;
 
         // 0 if public, 1 if private
-        if self.bytes[1] & mask == 0 {
-            true
-        } else {
-            false
-        }
+        self.bytes[1] & mask == 0
     }
 
     pub fn is_reserved_bit_valid(&self) -> bool {
@@ -103,11 +95,7 @@ impl ChunkType {
         let mask: u8 = 1 << RESERVED_CHUNK_BIT;
 
         // Reserved bit is valid if bit 5 of is 0 (capital letter)
-        if self.bytes[2] & mask == 0 {
-            true
-        } else {
-            false
-        }
+        self.bytes[2] & mask == 0
     }
 
     pub fn is_safe_to_copy(&self) -> bool {
@@ -117,11 +105,7 @@ impl ChunkType {
         let mask: u8 = 1 << SAFE_CHUNK_BIT;
 
         // 0 if unsafe to copy, 1 if safe to copy
-        if self.bytes[3] & mask == 0 {
-            false
-        } else {
-            true
-        }
+        self.bytes[3] & mask != 0
     }
 }
 

@@ -29,15 +29,15 @@ impl TryFrom<&[u8]> for Png {
     fn try_from(value: &[u8]) -> Result<Png, PngError> {
         if value.len() < Png::STANDARD_HEADER.len() {
             return Err(PngError::InvalidBytes {
-                reason: String::from(format!(
+                reason: format!(
                     "not enough bytes (need {} or more)",
                     Png::STANDARD_HEADER.len()
-                )),
+                ),
             });
         }
 
         // Check header is correct
-        if &value[..Png::STANDARD_HEADER.len()] != Png::STANDARD_HEADER {
+        if value[..Png::STANDARD_HEADER.len()] != Png::STANDARD_HEADER {
             return Err(PngError::InvalidHeader {});
         }
 
@@ -77,7 +77,7 @@ impl TryFrom<&[u8]> for Png {
 
         Ok(Png {
             header: Png::STANDARD_HEADER,
-            chunks: chunks,
+            chunks,
         })
     }
 }
@@ -95,7 +95,7 @@ impl Png {
     pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png {
             header: Png::STANDARD_HEADER,
-            chunks: chunks,
+            chunks,
         }
     }
 
